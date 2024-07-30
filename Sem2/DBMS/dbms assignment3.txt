@@ -1,0 +1,168 @@
+CREATE TABLE Student (
+    Rollno INT PRIMARY KEY,
+    Name VARCHAR(100),
+    Dob DATE,
+    Gender CHAR(1),
+    Doa DATE,
+    Bcode INT,
+    CONSTRAINT chk_gender CHECK (Gender IN ('M', 'F'))
+);
+
+CREATE OR REPLACE TRIGGER before_insert_Student
+BEFORE INSERT ON Student
+FOR EACH ROW
+BEGIN
+    IF :NEW.Doa > SYSDATE THEN
+        RAISE_APPLICATION_ERROR(-20001, 'Date of admission cannot be in the future');
+    END IF;
+END;
+/
+
+
+CREATE TABLE Department (
+    Dno INT PRIMARY KEY,
+    Dname VARCHAR(100)
+);
+
+
+CREATE TABLE Branch (
+    Bcode INT PRIMARY KEY,
+    Bname VARCHAR(100),
+    Dno INT,
+    FOREIGN KEY (Dno) REFERENCES Department(Dno)
+);
+
+
+CREATE TABLE Course (
+    Ccode INT PRIMARY KEY,
+    Cname VARCHAR(100),
+    Credits INT,
+    Dno INT,
+    FOREIGN KEY (Dno) REFERENCES Department(Dno)
+);
+
+
+CREATE TABLE Branch_Course (
+    Bcode INT,
+    Ccode INT,
+    Semester INT,
+    PRIMARY KEY (Bcode, Ccode),
+    FOREIGN KEY (Bcode) REFERENCES Branch(Bcode),
+    FOREIGN KEY (Ccode) REFERENCES Course(Ccode)
+);
+
+
+CREATE TABLE Enrolls (
+    Rollno INT,
+    Ccode INT,
+    Sess DATE,
+    Grade CHAR(1),
+    PRIMARY KEY (Rollno, Ccode, Sess),
+    FOREIGN KEY (Rollno) REFERENCES Student(Rollno),
+    FOREIGN KEY (Ccode) REFERENCES Course(Ccode)
+);
+
+
+INSERT INTO Student (Rollno, Name, Dob, Gender, Doa, Bcode)
+  WITH names AS ( 
+    SELECT 1, 'John Doe', TO_DATE('2000-05-15', 'YYYY-MM-DD'), 'M', TO_DATE('2023-09-01', 'YYYY-MM-DD'), 101 FROM dual UNION ALL 
+    SELECT 2, 'Jane Smith', TO_DATE('2001-03-20', 'YYYY-MM-DD'), 'F', TO_DATE('2023-09-01', 'YYYY-MM-DD'), 102 FROM dual
+    ) 
+  SELECT * FROM names;
+
+
+INSERT INTO Department (Dno, Dname)
+  WITH departments AS ( 
+    SELECT 101, 'Computer Science' FROM dual UNION ALL 
+    SELECT 102, 'Electrical Engineering' FROM dual
+    ) 
+  SELECT * FROM departments;
+
+
+
+INSERT INTO Branch (Bcode, Bname, Dno)
+  WITH branches AS ( 
+    SELECT 201, 'Software Engineering', 101 FROM dual UNION ALL 
+    SELECT 202, 'Networks and Systems', 101 FROM dual UNION ALL 
+    SELECT 203, 'Computer Networks', 101 FROM dual UNION ALL
+    SELECT 204, 'Data Science', 101 FROM dual
+  ) 
+  SELECT * FROM branches;
+
+
+
+INSERT INTO Course (Ccode, Cname, Credits, Dno)
+  WITH courses AS ( 
+    SELECT 301, 'Database Systems', 3, 101 FROM dual UNION ALL 
+    SELECT 302, 'Operating Systems', 3, 101 FROM dual UNION ALL 
+    SELECT 303, 'Digital Electronics', 3, 101 FROM dual UNION ALL 
+    SELECT 304, 'Fluid Dynamics', 3, 101 FROM dual UNION ALL
+    SELECT 305, 'Web Development', 3, 101 FROM dual UNION ALL
+    SELECT 306, 'Machine Learning', 3, 101 FROM dual UNION ALL
+    SELECT 307, 'Robotics', 3, 101 FROM dual
+  ) 
+  SELECT * FROM courses;
+
+
+
+INSERT INTO Branch_Course (Bcode, Ccode, Semester)
+  WITH branch_courses AS ( 
+    SELECT 201, 301, 1 FROM dual UNION ALL 
+    SELECT 202, 301, 1 FROM dual UNION ALL 
+    SELECT 203, 301, 1 FROM dual UNION ALL
+    SELECT 204, 301, 1 FROM dual
+    ) 
+  SELECT * FROM branch_courses;
+
+
+
+INSERT INTO Enrolls (Rollno, Ccode, Sess, Grade)
+  WITH enrollments AS ( 
+    SELECT 2, 301, TO_DATE('2023-09-01', 'YYYY-MM-DD'), 'S' FROM dual UNION ALL 
+    SELECT 2, 303, TO_DATE('2023-09-01', 'YYYY-MM-DD'), 'S' FROM dual UNION ALL 
+    SELECT 2, 302, TO_DATE('2023-09-01', 'YYYY-MM-DD'), 'S' FROM dual
+   ) 
+  SELECT * FROM enrollments;
+
+
+
+SELECT D.Dno, D.Dname
+FROM Department D
+JOIN Branch B ON D.Dno = B.Dno
+GROUP BY D.Dno, D.Dname
+HAVING COUNT(B.Bcode) > 3;
+
+
+SELECT D.Dno, D.Dname
+FROM Department D
+JOIN Course C ON D.Dno = C.Dno
+GROUP BY D.Dno, D.Dname
+HAVING COUNT(C.Ccode) > 6;
+
+
+SELECT C.Ccode, C.Cname, COUNT(BC.Bcode) AS Branches_Count
+FROM Course C
+JOIN Branch_Course BC ON C.Ccode = BC.Ccode
+GROUP BY C.Ccode, C.Cname
+HAVING COUNT(BC.Bcode) > 3;
+
+
+
+SELECT E.Rollno, COUNT(E.Ccode) AS Courses_with_S
+FROM Enrolls E
+WHERE E.Grade = 'S'
+GROUP BY E.Rollno
+HAVING COUNT(E.Ccode) > 2;
+
+
+
+CREATE VIEW SuccessfulCoursesView AS
+SELECT S.Rollno, S.Name, COUNT(E.Ccode) AS SuccessfulCoursesCount
+FROM Student S
+JOIN Enrolls E ON S.Rollno = E.Rollno
+WHERE E.Grade = 'S'
+GROUP BY S.Rollno, S.Name;
+
+
+
+SELECT * FROM SuccessfulCoursesView;

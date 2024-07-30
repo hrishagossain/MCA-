@@ -1,0 +1,161 @@
+CREATE TABLE book (
+    book_id NUMBER(38) PRIMARY KEY,
+    title VARCHAR2(20),
+    pub_year VARCHAR2(20),
+    publisher_name VARCHAR2(20)
+);
+
+
+CREATE TABLE book_authors (
+    author_name VARCHAR2(20) NOT NULL,
+    book_id NUMBER(38) NOT NULL,
+    FOREIGN KEY (book_id) REFERENCES book(book_id)
+    ON DELETE CASCADE
+);
+
+
+CREATE TABLE publisher (
+    name VARCHAR2(20) PRIMARY KEY,
+    phone NUMBER(38),
+    address VARCHAR2(20)
+);
+
+
+ALTER TABLE book
+ADD CONSTRAINT fk_publisher_name
+FOREIGN KEY (publisher_name)
+REFERENCES publisher(name)
+ON DELETE CASCADE;
+
+
+CREATE TABLE book_copies (
+    book_id NUMBER(38) NOT NULL,
+    no_of_copies NUMBER(38),
+    branch_id NUMBER(38) NOT NULL,
+    PRIMARY KEY (book_id, branch_id),
+    FOREIGN KEY (book_id) REFERENCES book(book_id)
+    ON DELETE CASCADE
+);
+
+
+CREATE TABLE book_lending (
+    date_out DATE,
+    due_date DATE,
+    book_id NUMBER(38),
+    branch_id NUMBER(38),
+    card_no NUMBER(38),
+    PRIMARY KEY (book_id, branch_id, card_no),
+    FOREIGN KEY (book_id) REFERENCES book(book_id)
+    ON DELETE CASCADE
+);
+
+
+CREATE TABLE library_branch (
+    branch_id NUMBER(38) PRIMARY KEY,
+    branch_name VARCHAR2(50),
+    address VARCHAR2(50)
+);
+
+
+CREATE TABLE card (
+    card_no NUMBER(38) PRIMARY KEY
+);
+
+
+ALTER TABLE book_copies
+ADD CONSTRAINT fk_book_copies_branch
+FOREIGN KEY (branch_id)
+REFERENCES library_branch(branch_id)
+ON DELETE CASCADE;
+
+
+ALTER TABLE book_lending
+ADD CONSTRAINT fk_book_lending_branch
+FOREIGN KEY (branch_id)
+REFERENCES library_branch(branch_id)
+ON DELETE CASCADE;
+
+
+ALTER TABLE book_lending
+ADD CONSTRAINT fk_book_lending_card
+FOREIGN KEY (card_no)
+REFERENCES card(card_no)
+ON DELETE CASCADE;
+
+
+INSERT INTO publisher (name, phone, address)
+  WITH names AS ( 
+    SELECT 'MCGRAW-HILL', 9989076587, 'BANGALORE' FROM dual UNION ALL 
+    SELECT 'PEARSON', 9889076565, 'NEWDELHI' FROM dual UNION ALL 
+    SELECT 'RANDOM HOUSE', 7455679345, 'HYDERABAD' FROM dual UNION ALL 
+    SELECT 'HACHETTE LIVRE', 8970862340, 'CHENNAI' FROM dual UNION ALL
+    SELECT 'GRUPO PLANETA', 7756120238, 'BANGALORE' FROM dual
+  ) 
+  SELECT * FROM names;
+
+
+INSERT INTO book (book_id, title, pub_year, publisher_name)
+  WITH names AS ( 
+    SELECT 1,'DBMS','JAN-2017', 'MCGRAW-HILL' FROM dual UNION ALL 
+    SELECT 2,'ADBMS','JUN-2016','MCGRAW-HILL' FROM dual UNION ALL 
+    SELECT 3,'CN','SEP-2016', 'PEARSON' FROM dual UNION ALL 
+    SELECT 4,'CG','SEP-2015', 'GRUPO PLANETA' FROM dual UNION ALL
+    SELECT 5,'OS','MAY-2016', 'PEARSON' FROM dual
+  ) 
+  SELECT * FROM names;
+
+
+INSERT INTO book_authors(author_name, book_id)
+  WITH names AS ( 
+    SELECT 'NAVATHE', 1    FROM dual UNION ALL 
+    SELECT 'NAVATHE', 2   FROM dual UNION ALL 
+    SELECT 'TANENBAUM', 3 FROM dual UNION ALL 
+    SELECT 'EDWARD ANGEL', 4     FROM dual UNION ALL
+    SELECT 'GALVIN', 5 FROM dual
+  ) 
+  SELECT * FROM names;
+
+
+INSERT INTO library_branch (branch_id, branch_name, address)
+  WITH names AS ( 
+    SELECT 10,'RR NAGAR','BANGALORE' FROM dual UNION ALL 
+    SELECT 11,'RNSIT','BANGALORE' FROM dual UNION ALL 
+    SELECT 12,'RAJAJI NAGAR', 'BANGALORE' FROM dual UNION ALL 
+    SELECT 13,'NITTE','MANGALORE' FROM dual UNION ALL
+    SELECT 14,'MANIPAL','UDUPI' FROM dual
+  ) 
+  SELECT * FROM names;
+
+
+INSERT INTO book_copies(no_of_copies, book_id, branch_id)
+  WITH names AS (  
+    SELECT 5,1,11 FROM dual UNION ALL 
+    SELECT 2,2,12 FROM dual UNION ALL 
+    SELECT 5,2,13 FROM dual UNION ALL
+    SELECT 7,3,14 FROM dual UNION ALL
+    SELECT 1,5,10 FROM dual UNION ALL
+    SELECT 3,4,11 FROM dual 
+  ) 
+  SELECT * FROM names;
+
+
+INSERT INTO card(card_no)
+  WITH names AS ( 
+    SELECT 100 FROM dual UNION ALL 
+    SELECT 101 FROM dual UNION ALL 
+    SELECT 102 FROM dual UNION ALL 
+    SELECT 103 FROM dual UNION ALL 
+    SELECT 104 FROM dual 
+  ) 
+  SELECT * FROM names;
+
+
+INSERT INTO book_lending(date_out, due_date, book_id, branch_id, card_no)
+  WITH names AS ( 
+    SELECT '01-JAN-17','01-JUN-17', 1, 10, 101 FROM dual UNION ALL 
+    SELECT '11-JAN-17','11-MAR-17', 3, 14, 101 FROM dual UNION ALL 
+    SELECT '21-FEB-17','21-APR-17', 2, 13, 101 FROM dual UNION ALL 
+    SELECT '15-MAR-17','15-JUL-17', 4, 11, 101 FROM dual UNION ALL 
+    SELECT '12-APR-17','12-MAY-17', 1, 11, 104 FROM dual 
+  ) 
+  SELECT * FROM names;
